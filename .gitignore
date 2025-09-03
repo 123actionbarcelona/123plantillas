@@ -1,0 +1,23 @@
+# Node
+node_modules/
+npm-debug.log*
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Env and secrets
+.env
+.env.*
+
+# Runtime
+*.pid
+*.log
+combined.log
+error.log
+security.log
+
+# Database (keep out of repo)
+templates.db
+
+# OS
+.DS_Store

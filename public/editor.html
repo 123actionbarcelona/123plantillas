@@ -1,0 +1,856 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="/colors.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editor Visual de Plantillas - Drag & Drop</title>
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Estilos para el editor */
+        #editor {
+            min-height: 400px;
+            background: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 20px;
+            outline: none;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+        
+        #editor:focus {
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+        
+        /* Estilos para las variables */
+        .variable-tag {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 20px;
+            display: inline-block;
+            margin: 2px;
+            cursor: move;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+            user-select: none;
+        }
+        
+        .variable-tag:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        .variable-tag.dragging {
+            opacity: 0.5;
+        }
+        
+        /* Variable insertada en el editor */
+        .inserted-variable {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            display: inline-block;
+            margin: 0 2px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        /* Panel de variables */
+        .variables-panel {
+            background: #f9fafb;
+            border-radius: 12px;
+            padding: 20px;
+            height: fit-content;
+            position: sticky;
+            top: 20px;
+        }
+        
+        /* Categorías de variables */
+        .variable-category {
+            margin-bottom: 20px;
+        }
+        
+        .category-title {
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 10px;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        /* Drag over effect */
+        #editor.drag-over {
+            background: #f0f9ff;
+            border-color: #3b82f6;
+        }
+        
+        /* Botones de formato */
+        .format-btn {
+            padding: 8px 12px;
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-right: 5px;
+        }
+        
+        .format-btn:hover {
+            background: #f3f4f6;
+            border-color: #d1d5db;
+        }
+        
+        .format-btn.active {
+            background: #3b82f6;
+            color: white;
+            border-color: #3b82f6;
+        }
+        
+        /* Preview */
+        #preview {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 20px;
+            min-height: 400px;
+        }
+        
+        /* Custom variable input */
+        .custom-var-input {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+        
+        /* Toast notifications */
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 12px 20px;
+            background: #10b981;
+            color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            z-index: 1000;
+            animation: slideIn 0.3s ease-out;
+        }
+        
+        @keyframes slideIn {
+            from {
+                transform: translateY(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        
+        /* Highlighting drop zone */
+        .drop-indicator {
+            border: 2px dashed #3b82f6;
+            background: rgba(59, 130, 246, 0.05);
+            padding: 10px;
+            border-radius: 6px;
+            text-align: center;
+            color: #3b82f6;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <!-- Header -->
+    <header class="bg-white shadow-sm border-b">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <a href="/" class="text-gray-600 hover:text-gray-900">
+                        <i class="fas fa-arrow-left"></i>
+                    </a>
+                    <h1 class="text-2xl font-bold text-gray-800">
+                        <i class="fas fa-magic text-purple-600"></i>
+                        Editor Visual de Plantillas
+                    </h1>
+                </div>
+                <div class="flex gap-3">
+                    <button onclick="saveTemplate()" class="px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2">
+                        <i class="fas fa-save"></i>
+                        Guardar Plantilla
+                    </button>
+                    <button onclick="testEmail()" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2">
+                        <i class="fas fa-paper-plane"></i>
+                        Probar Envío
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <div class="container mx-auto px-4 py-8">
+        <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+            
+            <!-- Panel de Variables (Izquierda) -->
+            <div class="lg:col-span-1">
+                <div class="variables-panel">
+                    <h2 class="text-lg font-bold text-gray-800 mb-4">
+                        <i class="fas fa-tags text-purple-600"></i>
+                        Variables Disponibles
+                    </h2>
+                    
+                    <!-- Variables del Cliente -->
+                    <div class="variable-category">
+                        <div class="category-title">
+                            <i class="fas fa-user text-blue-500"></i> Cliente
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                            <div class="variable-tag" draggable="true" data-variable="nombre_cliente">
+                                {{nombre_cliente}}
+                            </div>
+                            <div class="variable-tag" draggable="true" data-variable="email_cliente">
+                                {{email_cliente}}
+                            </div>
+                            <div class="variable-tag" draggable="true" data-variable="telefono_cliente">
+                                {{telefono_cliente}}
+                            </div>
+                            <div class="variable-tag" draggable="true" data-variable="direccion_cliente">
+                                {{direccion_cliente}}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Variables de Empresa -->
+                    <div class="variable-category">
+                        <div class="category-title">
+                            <i class="fas fa-building text-green-500"></i> Empresa
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                            <div class="variable-tag" draggable="true" data-variable="nombre_empresa">
+                                {{nombre_empresa}}
+                            </div>
+                            <div class="variable-tag" draggable="true" data-variable="email_empresa">
+                                {{email_empresa}}
+                            </div>
+                            <div class="variable-tag" draggable="true" data-variable="telefono_empresa">
+                                {{telefono_empresa}}
+                            </div>
+                            <div class="variable-tag" draggable="true" data-variable="web_empresa">
+                                {{web_empresa}}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Variables de Pedido -->
+                    <div class="variable-category">
+                        <div class="category-title">
+                            <i class="fas fa-shopping-cart text-orange-500"></i> Pedido
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                            <div class="variable-tag" draggable="true" data-variable="numero_pedido">
+                                {{numero_pedido}}
+                            </div>
+                            <div class="variable-tag" draggable="true" data-variable="fecha_pedido">
+                                {{fecha_pedido}}
+                            </div>
+                            <div class="variable-tag" draggable="true" data-variable="total_pedido">
+                                {{total_pedido}}
+                            </div>
+                            <div class="variable-tag" draggable="true" data-variable="estado_pedido">
+                                {{estado_pedido}}
+                            </div>
+                            <div class="variable-tag" draggable="true" data-variable="productos">
+                                {{productos}}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Variables Generales -->
+                    <div class="variable-category">
+                        <div class="category-title">
+                            <i class="fas fa-globe text-purple-500"></i> Generales
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                            <div class="variable-tag" draggable="true" data-variable="fecha_actual">
+                                {{fecha_actual}}
+                            </div>
+                            <div class="variable-tag" draggable="true" data-variable="año">
+                                {{año}}
+                            </div>
+                            <div class="variable-tag" draggable="true" data-variable="mes">
+                                {{mes}}
+                            </div>
+                            <div class="variable-tag" draggable="true" data-variable="dia">
+                                {{dia}}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Variables Personalizadas -->
+                    <div class="variable-category">
+                        <div class="category-title">
+                            <i class="fas fa-plus-circle text-indigo-500"></i> Personalizadas
+                        </div>
+                        <div id="customVariables" class="flex flex-wrap gap-2 mb-3">
+                            <!-- Las variables personalizadas se añadirán aquí -->
+                        </div>
+                        <div class="custom-var-input">
+                            <input type="text" id="newVarName" placeholder="Nueva variable" 
+                                class="flex-1 px-3 py-2 border rounded-lg text-sm focus:outline-none focus:border-blue-500">
+                            <button onclick="addCustomVariable()" 
+                                class="px-3 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Instrucciones -->
+                    <div class="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                        <h3 class="font-semibold text-blue-900 mb-2">
+                            <i class="fas fa-info-circle"></i> Cómo usar
+                        </h3>
+                        <ul class="text-sm text-blue-800 space-y-1">
+                            <li>• Arrastra las variables al editor</li>
+                            <li>• Suéltalas donde quieras insertarlas</li>
+                            <li>• Las variables se reemplazarán al enviar</li>
+                            <li>• Puedes crear variables personalizadas</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Editor Principal (Centro) -->
+            <div class="lg:col-span-2">
+                <div class="bg-white rounded-lg shadow-sm p-6">
+                    <!-- Información de la plantilla -->
+                    <div class="mb-6">
+                        <input type="text" id="templateTitle" placeholder="Título de la plantilla" 
+                            class="w-full text-2xl font-bold border-0 border-b-2 border-gray-200 focus:border-blue-500 focus:outline-none pb-2 mb-4">
+                        <input type="text" id="templateDescription" placeholder="Descripción de la plantilla" 
+                            class="w-full text-gray-600 border-0 border-b border-gray-200 focus:border-blue-500 focus:outline-none pb-2">
+                    </div>
+                    
+                    <!-- Barra de herramientas -->
+                    <div class="flex flex-wrap gap-2 mb-4 p-3 bg-gray-50 rounded-lg">
+                        <button onclick="formatText('bold')" class="format-btn" title="Negrita">
+                            <i class="fas fa-bold"></i>
+                        </button>
+                        <button onclick="formatText('italic')" class="format-btn" title="Cursiva">
+                            <i class="fas fa-italic"></i>
+                        </button>
+                        <button onclick="formatText('underline')" class="format-btn" title="Subrayado">
+                            <i class="fas fa-underline"></i>
+                        </button>
+                        <span class="border-l border-gray-300 mx-2"></span>
+                        <button onclick="formatText('justifyLeft')" class="format-btn" title="Alinear izquierda">
+                            <i class="fas fa-align-left"></i>
+                        </button>
+                        <button onclick="formatText('justifyCenter')" class="format-btn" title="Centrar">
+                            <i class="fas fa-align-center"></i>
+                        </button>
+                        <button onclick="formatText('justifyRight')" class="format-btn" title="Alinear derecha">
+                            <i class="fas fa-align-right"></i>
+                        </button>
+                        <span class="border-l border-gray-300 mx-2"></span>
+                        <button onclick="insertLink()" class="format-btn" title="Insertar enlace">
+                            <i class="fas fa-link"></i>
+                        </button>
+                        <button onclick="insertImage()" class="format-btn" title="Insertar imagen">
+                            <i class="fas fa-image"></i>
+                        </button>
+                        <button onclick="insertButton()" class="format-btn" title="Insertar botón">
+                            <i class="fas fa-square"></i>
+                        </button>
+                        <span class="border-l border-gray-300 mx-2"></span>
+                        <button onclick="toggleSource()" class="format-btn" title="Ver/Editar HTML">
+                            <i class="fas fa-code"></i>
+                        </button>
+                    </div>
+                    
+                    <!-- Editor -->
+                    <div id="editor" contenteditable="true">
+                        <h2>Bienvenido al Editor Visual</h2>
+                        <p>Arrastra las variables desde el panel izquierdo y suéltalas aquí.</p>
+                        <p>Por ejemplo: Hola <span class="inserted-variable">{{nombre_cliente}}</span>, gracias por tu pedido.</p>
+                    </div>
+                    
+                    <!-- Editor de código (oculto por defecto) -->
+                    <textarea id="sourceEditor" class="hidden w-full h-96 p-4 font-mono text-sm border rounded-lg"></textarea>
+                </div>
+            </div>
+            
+            <!-- Panel de Preview (Derecha) -->
+            <div class="lg:col-span-1">
+                <div class="bg-white rounded-lg shadow-sm p-6">
+                    <h2 class="text-lg font-bold text-gray-800 mb-4">
+                        <i class="fas fa-eye text-blue-600"></i>
+                        Vista Previa
+                    </h2>
+                    
+                    <!-- Valores de prueba para preview -->
+                    <div class="mb-4">
+                        <button onclick="toggleTestValues()" class="text-sm text-blue-600 hover:text-blue-700">
+                            <i class="fas fa-cog"></i> Valores de prueba
+                        </button>
+                        <div id="testValues" class="hidden mt-3 space-y-2 text-sm">
+                            <!-- Los valores de prueba se generarán dinámicamente -->
+                        </div>
+                    </div>
+                    
+                    <!-- Preview -->
+                    <div id="preview">
+                        <p class="text-gray-500 text-center">La vista previa aparecerá aquí...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Toast Container -->
+    <div id="toastContainer"></div>
+    
+    <script>
+        // Variables personalizadas
+        let customVariables = [];
+        
+        // Estado del editor
+        let isSourceMode = false;
+        let templateId = null;
+        
+        // Valores de prueba para preview
+        const testValues = {
+            nombre_cliente: 'Juan Pérez',
+            email_cliente: 'juan@ejemplo.com',
+            telefono_cliente: '+34 600 123 456',
+            direccion_cliente: 'Calle Principal 123, Madrid',
+            nombre_empresa: 'Mi Empresa S.L.',
+            email_empresa: 'info@miempresa.com',
+            telefono_empresa: '+34 900 123 456',
+            web_empresa: 'www.miempresa.com',
+            numero_pedido: '#2024-001',
+            fecha_pedido: '15/03/2024',
+            total_pedido: '€99.99',
+            estado_pedido: 'Enviado',
+            productos: 'Producto A, Producto B',
+            fecha_actual: new Date().toLocaleDateString('es-ES'),
+            año: new Date().getFullYear(),
+            mes: new Date().toLocaleDateString('es-ES', { month: 'long' }),
+            dia: new Date().getDate()
+        };
+        
+        // Inicialización
+        document.addEventListener('DOMContentLoaded', () => {
+            setupDragAndDrop();
+            setupEditor();
+            updatePreview();
+            loadTemplateIfEdit();
+        });
+        
+        // Configurar Drag and Drop
+        function setupDragAndDrop() {
+            // Variables arrastrables
+            document.querySelectorAll('.variable-tag').forEach(tag => {
+                tag.addEventListener('dragstart', handleDragStart);
+                tag.addEventListener('dragend', handleDragEnd);
+            });
+            
+            // Editor como zona de drop
+            const editor = document.getElementById('editor');
+            editor.addEventListener('dragover', handleDragOver);
+            editor.addEventListener('drop', handleDrop);
+            editor.addEventListener('dragleave', handleDragLeave);
+        }
+        
+        // Manejar inicio de arrastre
+        function handleDragStart(e) {
+            e.target.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'copy';
+            e.dataTransfer.setData('variable', e.target.dataset.variable);
+        }
+        
+        // Manejar fin de arrastre
+        function handleDragEnd(e) {
+            e.target.classList.remove('dragging');
+            document.getElementById('editor').classList.remove('drag-over');
+        }
+        
+        // Manejar arrastre sobre el editor
+        function handleDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'copy';
+            e.currentTarget.classList.add('drag-over');
+        }
+        
+        // Manejar salida del editor
+        function handleDragLeave(e) {
+            if (e.target === e.currentTarget) {
+                e.currentTarget.classList.remove('drag-over');
+            }
+        }
+        
+        // Manejar drop de variable
+        function handleDrop(e) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('drag-over');
+            
+            const variable = e.dataTransfer.getData('variable');
+            if (!variable) return;
+            
+            const variableHtml = `<span class="inserted-variable" contenteditable="false">{{${variable}}}</span>`;
+            
+            // Insertar en la posición del cursor o al final
+            const selection = window.getSelection();
+            if (selection.rangeCount > 0) {
+                const range = selection.getRangeAt(0);
+                
+                // Si el drop es dentro del editor
+                if (e.currentTarget.contains(range.commonAncestorContainer)) {
+                    range.deleteContents();
+                    const node = document.createElement('span');
+                    node.innerHTML = variableHtml;
+                    range.insertNode(node.firstChild);
+                } else {
+                    // Si no hay selección, añadir al final
+                    e.currentTarget.innerHTML += variableHtml;
+                }
+            } else {
+                e.currentTarget.innerHTML += variableHtml;
+            }
+            
+            updatePreview();
+            showToast(`Variable {{${variable}}} añadida`);
+        }
+        
+        // Configurar editor
+        function setupEditor() {
+            const editor = document.getElementById('editor');
+            editor.addEventListener('input', updatePreview);
+            editor.addEventListener('paste', handlePaste);
+        }
+        
+        // Manejar pegado de texto
+        function handlePaste(e) {
+            e.preventDefault();
+            const text = e.clipboardData.getData('text/plain');
+            document.execCommand('insertText', false, text);
+        }
+        
+        // Formatear texto
+        function formatText(command) {
+            document.execCommand(command, false, null);
+            updatePreview();
+        }
+        
+        // Insertar enlace
+        function insertLink() {
+            const url = prompt('Ingresa la URL:');
+            if (url) {
+                document.execCommand('createLink', false, url);
+                updatePreview();
+            }
+        }
+        
+        // Insertar imagen
+        function insertImage() {
+            const url = prompt('Ingresa la URL de la imagen:');
+            if (url) {
+                document.execCommand('insertImage', false, url);
+                updatePreview();
+            }
+        }
+        
+        // Insertar botón
+        function insertButton() {
+            const text = prompt('Texto del botón:');
+            const url = prompt('URL del botón:');
+            if (text && url) {
+                const buttonHtml = `<a href="${url}" style="display: inline-block; padding: 10px 20px; background: #3b82f6; color: white; text-decoration: none; border-radius: 6px;">${text}</a>`;
+                document.execCommand('insertHTML', false, buttonHtml);
+                updatePreview();
+            }
+        }
+        
+        // Toggle modo código
+        function toggleSource() {
+            const editor = document.getElementById('editor');
+            const sourceEditor = document.getElementById('sourceEditor');
+            
+            if (isSourceMode) {
+                // Volver a modo visual
+                editor.innerHTML = sourceEditor.value;
+                editor.classList.remove('hidden');
+                sourceEditor.classList.add('hidden');
+                isSourceMode = false;
+            } else {
+                // Cambiar a modo código
+                sourceEditor.value = editor.innerHTML;
+                sourceEditor.classList.remove('hidden');
+                editor.classList.add('hidden');
+                isSourceMode = true;
+            }
+        }
+        
+        // Añadir variable personalizada
+        function addCustomVariable() {
+            const input = document.getElementById('newVarName');
+            const varName = input.value.trim().toLowerCase().replace(/[^a-z0-9_]/g, '_');
+            
+            if (!varName) {
+                showToast('Ingresa un nombre para la variable', 'error');
+                return;
+            }
+            
+            if (customVariables.includes(varName)) {
+                showToast('Esta variable ya existe', 'error');
+                return;
+            }
+            
+            customVariables.push(varName);
+            
+            // Añadir al panel
+            const container = document.getElementById('customVariables');
+            const varTag = document.createElement('div');
+            varTag.className = 'variable-tag';
+            varTag.draggable = true;
+            varTag.dataset.variable = varName;
+            varTag.innerHTML = `{{${varName}}} <i class="fas fa-times ml-2 text-xs cursor-pointer" onclick="removeCustomVariable('${varName}', this)"></i>`;
+            varTag.addEventListener('dragstart', handleDragStart);
+            varTag.addEventListener('dragend', handleDragEnd);
+            container.appendChild(varTag);
+            
+            // Añadir valor de prueba
+            testValues[varName] = `Valor de ${varName}`;
+            
+            input.value = '';
+            showToast(`Variable {{${varName}}} creada`);
+            updateTestValuesPanel();
+        }
+        
+        // Eliminar variable personalizada
+        function removeCustomVariable(varName, element) {
+            customVariables = customVariables.filter(v => v !== varName);
+            element.parentElement.remove();
+            delete testValues[varName];
+            updateTestValuesPanel();
+            showToast(`Variable {{${varName}}} eliminada`);
+        }
+        
+        // Actualizar preview
+        function updatePreview() {
+            const editor = document.getElementById('editor');
+            const preview = document.getElementById('preview');
+            let html = isSourceMode ? document.getElementById('sourceEditor').value : editor.innerHTML;
+            
+            // Limpiar clases del editor
+            html = html.replace(/class="inserted-variable"/g, '')
+                      .replace(/contenteditable="false"/g, '');
+            
+            // Reemplazar variables con valores de prueba
+            Object.keys(testValues).forEach(key => {
+                const regex = new RegExp(`{{${key}}}`, 'g');
+                html = html.replace(regex, `<span style="background: #fef3c7; padding: 2px 5px; border-radius: 3px; font-weight: bold;">${testValues[key]}</span>`);
+            });
+            
+            preview.innerHTML = html;
+        }
+        
+        // Toggle valores de prueba
+        function toggleTestValues() {
+            const panel = document.getElementById('testValues');
+            panel.classList.toggle('hidden');
+            if (!panel.classList.contains('hidden')) {
+                updateTestValuesPanel();
+            }
+        }
+        
+        // Actualizar panel de valores de prueba
+        function updateTestValuesPanel() {
+            const panel = document.getElementById('testValues');
+            const usedVariables = getUsedVariables();
+            
+            let html = '';
+            usedVariables.forEach(varName => {
+                html += `
+                    <div class="flex gap-2">
+                        <span class="text-gray-600">${varName}:</span>
+                        <input type="text" value="${testValues[varName] || ''}" 
+                            onchange="updateTestValue('${varName}', this.value)"
+                            class="flex-1 px-2 py-1 border rounded text-xs">
+                    </div>
+                `;
+            });
+            
+            panel.innerHTML = html || '<p class="text-gray-500">No hay variables en uso</p>';
+        }
+        
+        // Obtener variables usadas en el editor
+        function getUsedVariables() {
+            const editor = document.getElementById('editor');
+            const html = isSourceMode ? document.getElementById('sourceEditor').value : editor.innerHTML;
+            const regex = /\{\{(\w+)\}\}/g;
+            const variables = new Set();
+            let match;
+            
+            while ((match = regex.exec(html)) !== null) {
+                variables.add(match[1]);
+            }
+            
+            return Array.from(variables);
+        }
+        
+        // Actualizar valor de prueba
+        function updateTestValue(varName, value) {
+            testValues[varName] = value;
+            updatePreview();
+        }
+        
+        // Guardar plantilla
+        async function saveTemplate() {
+            const title = document.getElementById('templateTitle').value;
+            const description = document.getElementById('templateDescription').value;
+            const editor = document.getElementById('editor');
+            let html = isSourceMode ? document.getElementById('sourceEditor').value : editor.innerHTML;
+            
+            if (!title || !description) {
+                showToast('Por favor completa el título y descripción', 'error');
+                return;
+            }
+            
+            // Limpiar HTML
+            html = html.replace(/class="inserted-variable"/g, '')
+                      .replace(/contenteditable="false"/g, '')
+                      .replace(/<span\s*>(\{\{[^}]+\}\})<\/span>/g, '$1');
+            
+            // Envolver en estructura HTML completa
+            const fullHtml = `<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        ${html}
+    </div>
+</body>
+</html>`;
+            
+            try {
+                const token = localStorage.getItem('authToken');
+                const url = templateId 
+                    ? `/api/templates/${templateId}`
+                    : '/api/templates';
+                const method = templateId ? 'PUT' : 'POST';
+                
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        title: title,
+                        description: description,
+                        html: fullHtml
+                    })
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    showToast('Plantilla guardada exitosamente', 'success');
+                    if (!templateId) {
+                        templateId = data.id;
+                        window.history.pushState({}, '', `?edit=${templateId}`);
+                    }
+                } else {
+                    throw new Error('Error al guardar');
+                }
+            } catch (error) {
+                showToast('Error al guardar la plantilla', 'error');
+                console.error(error);
+            }
+        }
+        
+        // Probar envío
+        function testEmail() {
+            const usedVars = getUsedVariables();
+            if (usedVars.length === 0) {
+                showToast('No hay variables para probar', 'warning');
+                return;
+            }
+            
+            // Aquí podrías abrir un modal para enviar un email de prueba
+            showToast('Función de prueba de envío próximamente', 'info');
+        }
+        
+        // Cargar plantilla si es edición
+        async function loadTemplateIfEdit() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const editId = urlParams.get('edit');
+            
+            if (editId) {
+                try {
+                    const token = localStorage.getItem('authToken');
+                    const response = await fetch(`/api/templates/${editId}`, {
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+                    
+                    if (response.ok) {
+                        const template = await response.json();
+                        templateId = template.id;
+                        document.getElementById('templateTitle').value = template.title;
+                        document.getElementById('templateDescription').value = template.description;
+                        
+                        // Extraer solo el contenido del body
+                        const parser = new DOMParser();
+                        const doc = parser.parseFromString(template.html, 'text/html');
+                        const content = doc.querySelector('.container') || doc.body;
+                        document.getElementById('editor').innerHTML = content.innerHTML;
+                        
+                        updatePreview();
+                    }
+                } catch (error) {
+                    console.error('Error cargando plantilla:', error);
+                }
+            }
+        }
+        
+        // Mostrar toast
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            
+            const colors = {
+                success: '#10b981',
+                error: '#ef4444',
+                warning: '#f59e0b',
+                info: '#3b82f6'
+            };
+            
+            toast.style.background = colors[type] || colors.success;
+            toast.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check' : type === 'error' ? 'times' : 'info'}-circle mr-2"></i>
+                ${message}
+            `;
+            
+            container.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.style.animation = 'slideIn 0.3s ease-out reverse';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
