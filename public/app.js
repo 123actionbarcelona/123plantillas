@@ -946,7 +946,7 @@ function updateStats() {
     
     // Espacio usado (calculado basándose en plantillas mostradas)
     const totalSize = currentTemplates.reduce((total, template) => {
-      const contentSize = (template.html_content?.length || 0) + (template.subject?.length || 0);
+      const contentSize = (template.html?.length || 0) + (template.email_subject?.length || 0) + (template.title?.length || 0) + (template.description?.length || 0);
       return total + contentSize;
     }, 0);
     
