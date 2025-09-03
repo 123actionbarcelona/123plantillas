@@ -1222,7 +1222,7 @@ app.post('/api/tags', authenticateToken, (req, res) => {
       function(err) {
         if (err) {
           if (err.message.includes('UNIQUE')) {
-            res.status(400).json({ error: 'Ya existe un tag con ese nombre en esta categoría' });
+            res.status(400).json({ error: 'Ya existe un tag con ese nombre' });
           } else {
             res.status(500).json({ error: err.message });
           }
@@ -1283,7 +1283,7 @@ app.put('/api/tags/:id', authenticateToken, (req, res) => {
     function(err) {
       if (err) {
         if (err.message.includes('UNIQUE')) {
-          res.status(400).json({ error: 'Ya existe un tag con ese nombre en esta categoría' });
+          res.status(400).json({ error: 'Ya existe un tag con ese nombre' });
         } else {
           res.status(500).json({ error: err.message });
         }
