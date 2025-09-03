@@ -222,27 +222,11 @@
 }
 .category-chip.active {
     font-weight: 700;
-    border: 3px solid #3b82f6;
-    box-shadow: 0 4px 16px rgba(59, 130, 246, 0.3);
+    border: 3px solid #f59e0b;
+    box-shadow: 0 4px 16px rgba(245, 158, 11, 0.4), 0 0 20px rgba(255, 255, 255, 0.3);
     transform: translateY(-1px);
     position: relative;
-}
-.category-chip.active::after {
-    content: '✓';
-    position: absolute;
-    top: -5px;
-    right: -5px;
-    background: #3b82f6;
-    color: white;
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 12px;
-    font-weight: bold;
-    border: 2px solid white;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(245, 158, 11, 0.1));
 }
 .template-card {
     position: relative;
@@ -293,11 +277,21 @@
 .tag-chip {
     position: relative;
     overflow: hidden;
-    transition: all 0.2s;
+    transition: all 0.3s ease;
     font-size: 0.875rem;
+    border: 2px solid transparent;
 }
-.tag-chip:hover { transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
-.tag-chip.active { font-weight: 600; box-shadow: 0 2px 6px rgba(0,0,0,0.2); }
+.tag-chip:hover { 
+    transform: translateY(-1px); 
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15); 
+}
+.tag-chip.active { 
+    font-weight: 700;
+    border: 2px solid #f59e0b;
+    box-shadow: 0 3px 12px rgba(245, 158, 11, 0.4), 0 0 15px rgba(255, 255, 255, 0.3);
+    transform: translateY(-1px);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(245, 158, 11, 0.08));
+}
 .template-tags { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
 .template-tag { display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border-radius:9999px; font-size:0.75rem; font-weight:500; cursor:pointer; transition:all 0.2s; }
 .template-tag:hover { transform: scale(1.05); }
