@@ -581,17 +581,17 @@ function renderTemplates() {
         </div>
         
         <!-- Contenido principal -->
-        <div class="p-8">
+        <div class="p-6">
           <div class="text-center mb-6">
-            <h3 class="text-3xl font-extrabold text-gray-900 mb-4 leading-tight">${escapeHtml(template.title)}</h3>
+            <h3 class="text-2xl font-extrabold text-gray-900 mb-4 leading-tight">${escapeHtml(template.title)}</h3>
             ${template.description ? `
-              <p class="text-gray-600 mb-6 text-lg leading-relaxed">${escapeHtml(template.description)}</p>
+              <p class="text-gray-600 mb-6 text-base leading-relaxed">${escapeHtml(template.description)}</p>
             ` : ''}
             
             <div class="flex flex-wrap gap-2 justify-center mb-4">
             ${template.tags && template.tags.length > 0 ? template.tags.map(tag => {
                 return `
-                  <span class="px-4 py-2 rounded-lg text-sm font-semibold shadow-md tag-chip-${tag.id}">
+                  <span class="px-4 py-2 rounded-lg text-xs font-semibold shadow-md tag-chip-${tag.id}">
                     ${escapeHtml(tag.name)}
                   </span>
                 `;
@@ -601,13 +601,13 @@ function renderTemplates() {
             <div class="flex items-center justify-center gap-2">
               <span class="flex items-center gap-2 px-4 py-2 rounded-lg shadow-md cat-badge-${catIdClass}">
                 ${categoryIcon ? `<i class="fas ${categoryIcon}"></i>` : ''}
-                <span class="text-sm font-semibold">${escapeHtml(categoryName)}</span>
+                <span class="text-xs font-semibold">${escapeHtml(categoryName)}</span>
               </span>
             </div>
           </div>
           
           <!-- Vista previa -->
-          <div class="template-preview bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-3 mb-6 border-2 border-gray-200 shadow-inner">
+          <div class="template-preview bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl p-2 mb-6 border-2 border-gray-200 shadow-inner">
             <div class="bg-white rounded-lg shadow-md overflow-hidden">
               <iframe srcdoc="<!DOCTYPE html>
                 <html>
@@ -635,7 +635,7 @@ function renderTemplates() {
                   ${template.html.replace(/"/g, '&quot;')}
                 </body>
                 </html>" 
-                class="w-full h-72 border-0"></iframe>
+                class="w-full h-56 border-0"></iframe>
             </div>
           </div>
           
