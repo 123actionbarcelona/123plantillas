@@ -54,12 +54,13 @@ const templateValidators = {
       .notEmpty().withMessage('El contenido HTML es requerido')
       .customSanitizer(value => DOMPurify.sanitize(value, {
         ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'br', 'strong', 'em', 'u', 'a', 
-                      'ul', 'ol', 'li', 'table', 'tr', 'td', 'th', 'div', 'span', 'img', 
-                      'blockquote', 'pre', 'code', 'hr', 'button', 'label', 'input', 'select', 
-                      'option', 'textarea', 'form'],
+                      'ul', 'ol', 'li', 'table', 'thead', 'tbody', 'tfoot', 'center', 'tr', 'td', 'th', 
+                      'div', 'span', 'img', 'blockquote', 'pre', 'code', 'hr', 'button', 'label', 
+                      'input', 'select', 'option', 'textarea', 'form'],
         ALLOWED_ATTR: ['href', 'src', 'alt', 'class', 'id', 'style', 'target', 'rel', 
                        'width', 'height', 'colspan', 'rowspan', 'type', 'name', 'value',
-                       'placeholder', 'required', 'disabled', 'readonly', 'checked']
+                       'placeholder', 'required', 'disabled', 'readonly', 'checked',
+                       'align', 'valign', 'bgcolor', 'cellpadding', 'cellspacing', 'border']
       })),
     // category_id como string opcional con coerción
     body('category_id')
@@ -106,12 +107,13 @@ const templateValidators = {
       .notEmpty().withMessage('El contenido HTML no puede estar vacío')
       .customSanitizer(value => DOMPurify.sanitize(value, {
         ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'br', 'strong', 'em', 'u', 'a', 
-                      'ul', 'ol', 'li', 'table', 'tr', 'td', 'th', 'div', 'span', 'img', 
-                      'blockquote', 'pre', 'code', 'hr', 'button', 'label', 'input', 'select', 
-                      'option', 'textarea', 'form'],
+                      'ul', 'ol', 'li', 'table', 'thead', 'tbody', 'tfoot', 'center', 'tr', 'td', 'th', 
+                      'div', 'span', 'img', 'blockquote', 'pre', 'code', 'hr', 'button', 'label', 
+                      'input', 'select', 'option', 'textarea', 'form'],
         ALLOWED_ATTR: ['href', 'src', 'alt', 'class', 'id', 'style', 'target', 'rel', 
                        'width', 'height', 'colspan', 'rowspan', 'type', 'name', 'value',
-                       'placeholder', 'required', 'disabled', 'readonly', 'checked']
+                       'placeholder', 'required', 'disabled', 'readonly', 'checked',
+                       'align', 'valign', 'bgcolor', 'cellpadding', 'cellspacing', 'border']
       })),
     body('category_id')
       .optional()
@@ -208,12 +210,13 @@ const generateSecureToken = (length = 32) => {
 const sanitizeHTML = (html) => {
   return DOMPurify.sanitize(html, {
     ALLOWED_TAGS: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'p', 'br', 'strong', 'em', 'u', 'a', 
-                  'ul', 'ol', 'li', 'table', 'tr', 'td', 'th', 'div', 'span', 'img', 
-                  'blockquote', 'pre', 'code', 'hr', 'button', 'label', 'input', 'select', 
-                  'option', 'textarea', 'form'],
+                  'ul', 'ol', 'li', 'table', 'thead', 'tbody', 'tfoot', 'center', 'tr', 'td', 'th', 
+                  'div', 'span', 'img', 'blockquote', 'pre', 'code', 'hr', 'button', 'label', 
+                  'input', 'select', 'option', 'textarea', 'form'],
     ALLOWED_ATTR: ['href', 'src', 'alt', 'class', 'id', 'style', 'target', 'rel', 
                    'width', 'height', 'colspan', 'rowspan', 'type', 'name', 'value',
-                   'placeholder', 'required', 'disabled', 'readonly', 'checked']
+                   'placeholder', 'required', 'disabled', 'readonly', 'checked',
+                   'align', 'valign', 'bgcolor', 'cellpadding', 'cellspacing', 'border']
   });
 };
 

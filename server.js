@@ -35,6 +35,9 @@ const transporter = nodemailer.createTransport({
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS
+  },
+  tls: {
+    rejectUnauthorized: false
   }
 });
 
@@ -1445,6 +1448,10 @@ function replaceVariables(html, values) {
     result = result.replace(regex2, value || '');
   }
   
+  // Procesar imágenes con clase an1 para asegurar tamaño correcto
+  result = result.replace(/<img class="an1"([^>]+)>/g, 
+    '<img class="an1" style="width: 16px !important; height: 16px !important; display: inline-block !important; vertical-align: middle !important;"$1>');
+  
   return result;
 }
 
@@ -1529,14 +1536,39 @@ app.post('/api/templates/:id/send', authenticateToken, async (req, res) => {
     }
     
     // Procesar HTML con variables
-    const processedHtml = replaceVariables(template.html, variables || {});
+    let processedHtml = replaceVariables(template.html, variables || {});
     
-    // Configurar el email (solo cambiamos el nombre visible)
+    // Asegurar que el HTML tenga DOCTYPE y estructura completa
+    if (!processedHtml.includes('<!DOCTYPE')) {
+      processedHtml = '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">' +
+        '<html xmlns="http://www.w3.org/1999/xhtml">' +
+        '<head>' +
+        '<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">' +
+        '<meta name="viewport" content="width=device-width, initial-scale=1.0">' +
+        '</head>' +
+        '<body style="margin: 0; padding: 0;">' + 
+        processedHtml + 
+        '</body></html>';
+    }
+    
+    // Configurar el email con headers MIME mejorados
     const mailOptions = {
-      from: `"123 Action Barcelona" <${process.env.EMAIL_USER}>`,
+      from: { 
+        name: '123 Action Barcelona', 
+        address: process.env.EMAIL_USER 
+      },
       to: to,
       subject: subject,
-      html: processedHtml
+      html: processedHtml,
+      text: 'Visualiza este correo en HTML',
+      headers: {
+        'MIME-Version': '1.0',
+        'X-Priority': '3',
+        'X-Mailer': ' '
+      },
+      encoding: 'quoted-printable',
+      textEncoding: 'quoted-printable',
+      charset: 'UTF-8'
     };
     
     // Enviar el email
